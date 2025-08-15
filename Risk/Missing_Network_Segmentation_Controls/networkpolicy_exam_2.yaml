@@ -1,14 +1,20 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-app-to-db
+  name: test-server-allow-app-only
   namespace: default
 spec:
   podSelector:
     matchLabels:
-      role: db
+      app: test-server
+  policyTypes:
+    - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
               role: app
+      ports:
+        - protocol: TCP
+          port: 80
+

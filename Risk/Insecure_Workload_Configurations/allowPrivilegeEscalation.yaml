@@ -3,11 +3,12 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: insecure-pod
+  name: insecure-invalid-pod
 spec:
   containers:
   - name: app
     image: nginx
+    command: ["sleep", "infinity"]
     securityContext:
       allowPrivilegeEscalation: true
 
@@ -16,10 +17,11 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: insecure-pod
+  name: insecure-valid-pod
 spec:
   containers:
   - name: app
     image: nginx
+    command: ["sleep", "infinity"]
     securityContext:
       allowPrivilegeEscalation: false

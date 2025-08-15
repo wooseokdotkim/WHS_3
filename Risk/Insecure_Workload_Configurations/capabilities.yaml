@@ -3,26 +3,28 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: insecure-pod
+  name: insecure-invalid-pod
 spec:
   containers:
   - name: app
-    image: nginx
-securityContext:
-  capabilities:
-    add: ["NET_ADMIN", "SYS_ADMIN"]
+    image: alpine 
+    command: ["sleep", "infinity"]
+    securityContext:
+      capabilities:
+        add: ["NET_ADMIN", "SYS_ADMIN"]
 
 ---
 # Valid
 apiVersion: v1
 kind: Pod
 metadata:
-  name: insecure-pod
+  name: insecure-valid-pod
 spec:
   containers:
   - name: app
-    image: nginx
-securityContext:
-  capabilities:
-    drop: ["ALL"]  # 기본은 다 제거하고
-    add: ["CHOWN"]  # 필요한 최소 권한만 추가
+    image: alpine 
+    command: ["sleep", "infinity"]
+    securityContext:
+      capabilities:
+        drop: ["ALL"]  # 기본은 다 제거하고
+        add: ["CHOWN"]  # 필요한 최소 권한만 추가
