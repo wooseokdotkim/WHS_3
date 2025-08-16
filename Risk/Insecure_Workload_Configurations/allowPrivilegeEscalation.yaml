@@ -1,27 +1,99 @@
-# Invalid 
 ---
+# invalid
 apiVersion: v1
 kind: Pod
 metadata:
   name: insecure-invalid-pod
 spec:
+  restartPolicy: Never
+  volumes:
+    - name: work
+      emptyDir: {}
+  initContainers:
+    - name: build-setuid
+      image: gcc:13-bookworm
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: work
+          mountPath: /work
+      command: ["/bin/bash","-lc"]
+      args:
+        - |
+          cat > /work/whoami_setuid.c <<'EOF'
+          #include <stdio.h>
+          #include <unistd.h>
+          int main() {
+              printf("Real UID: %d, Effective UID: %d\n", getuid(), geteuid());
+              return 0;
+          }
+          EOF
+          gcc /work/whoami_setuid.c -o /work/whoami_setuid
+          chown root:root /work/whoami_setuid
+          chmod 4755 /work/whoami_setuid
   containers:
-  - name: app
-    image: nginx
-    command: ["sleep", "infinity"]
-    securityContext:
-      allowPrivilegeEscalation: true
-
+    - name: runner
+      image: debian:bookworm-slim
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        allowPrivilegeEscalation: true
+      volumeMounts:
+        - name: work
+          mountPath: /work
+      command: ["/bin/sh","-lc"]
+      args:
+        - |
+          echo "[ape-true] NoNewPrivs=$(grep NoNewPrivs /proc/self/status | awk '{print $2}')"
+          echo "[ape-true] Running /work/whoami_setuid"
+          /work/whoami_setuid
 ---
-# Valid
+# valid
 apiVersion: v1
 kind: Pod
 metadata:
-  name: insecure-valid-pod
+  name: insecure-valid-pod 
 spec:
+  restartPolicy: Never
+  volumes:
+    - name: work
+      emptyDir: {}
+  initContainers:
+    - name: build-setuid
+      image: gcc:13-bookworm
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: work
+          mountPath: /work
+      command: ["/bin/bash","-lc"]
+      args:
+        - |
+          cat > /work/whoami_setuid.c <<'EOF'
+          #include <stdio.h>
+          #include <unistd.h>
+          int main() {
+              printf("Real UID: %d, Effective UID: %d\n", getuid(), geteuid());
+              return 0;
+          }
+          EOF
+          gcc /work/whoami_setuid.c -o /work/whoami_setuid
+          chown root:root /work/whoami_setuid
+          chmod 4755 /work/whoami_setuid
   containers:
-  - name: app
-    image: nginx
-    command: ["sleep", "infinity"]
-    securityContext:
-      allowPrivilegeEscalation: false
+    - name: runner
+      image: debian:bookworm-slim
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        allowPrivilegeEscalation: false
+      volumeMounts:
+        - name: work
+          mountPath: /work
+      command: ["/bin/sh","-lc"]
+      args:
+        - |
+          echo "[ape-false] NoNewPrivs=$(grep NoNewPrivs /proc/self/status | awk '{print $2}')"
+          echo "[ape-false] Running /work/whoami_setuid"
+          /work/whoami_setuid
+
